@@ -46,18 +46,6 @@ Built by **Axiler Labs** · Product: **[vaultmcp.dev](https://vaultmcp.dev)**
 
 One vault. One MCP URL. Every IDE talks to VaultMCP — not to your raw AWS or GitHub keys.
 
-```text
-  Claude   VS Code   Cursor   Windsurf   Zed
-     │        │         │         │       │
-     └────────┴────┬────┴─────────┴───────┘
-                   ▼
-            ┌─────────────┐
-            │  VaultMCP   │  encrypt · authorize · inject
-            │  vaultmcp.dev│
-            └──────┬──────┘
-                   ▼
-         AWS · GitHub · other MCP servers
-```
 
 </div>
 
