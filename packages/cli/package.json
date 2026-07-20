@@ -1,0 +1,40 @@
+{
+  "name": "@vaultmcp-axiler/cli",
+  "version": "0.1.2",
+  "description": "VaultMCP runtime CLI — inject shared workspace secrets into local commands with `vaultmcp run` (Node 22+).",
+  "license": "AGPL-3.0-only",
+  "author": "Axiler Labs",
+  "type": "module",
+  "bin": {
+    "vaultmcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo ok"
+  },
+  "homepage": "https://github.com/Axiler-Lab/vaultmcp/blob/main/docs/CLI.md",
+  "keywords": [
+    "vaultmcp",
+    "secrets",
+    "env",
+    "cli",
+    "mcp"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

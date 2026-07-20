@@ -1,0 +1,31 @@
+node_modules
+dist
+.build
+.next
+.turbo
+coverage
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Env and secrets — never commit real values
+.env
+.env.*
+!.env.example
+!.env.production
+.secrets/
+*.secret
+.npmrc
+
+# Keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*_deploy_key*
+*_deploy_key*.pub
+.vercel

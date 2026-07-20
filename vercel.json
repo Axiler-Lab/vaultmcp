@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @vaultmcp/shared build && pnpm --filter @vaultmcp/web build",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    { "source": "/mcp", "destination": "http://66.42.124.123/mcp" },
+    { "source": "/mcp/:path*", "destination": "http://66.42.124.123/mcp/:path*" },
+    { "source": "/api/:path*", "destination": "http://66.42.124.123/api/:path*" },
+    { "source": "/auth/:path*", "destination": "http://66.42.124.123/auth/:path*" },
+    { "source": "/oauth/:path*", "destination": "http://66.42.124.123/oauth/:path*" },
+    { "source": "/.well-known/:path*", "destination": "http://66.42.124.123/.well-known/:path*" },
+    { "source": "/health", "destination": "http://66.42.124.123/health" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

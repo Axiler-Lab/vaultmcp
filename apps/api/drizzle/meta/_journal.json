@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1783931955422,
+      "tag": "0000_petite_firebrand",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784094802724,
+      "tag": "0001_colorful_eternity",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784099000000,
+      "tag": "0002_api_token_scopes_expiry",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784480000000,
+      "tag": "0003_envelope_crypto",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784486400000,
+      "tag": "0004_web_mfa_totp",
+      "breakpoints": true
+    }
+  ]
+}

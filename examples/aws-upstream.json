@@ -1,0 +1,15 @@
+{
+  "name": "AWS",
+  "slug": "aws",
+  "transport": "stdio",
+  "command": "uvx",
+  "args": ["awslabs.aws-api-mcp-server@latest"],
+  "envTemplate": {
+    "AWS_ACCESS_KEY_ID": "{{secret:AWS_ACCESS_KEY_ID}}",
+    "AWS_SECRET_ACCESS_KEY": "{{secret:AWS_SECRET_ACCESS_KEY}}",
+    "AWS_REGION": "{{secret:AWS_REGION}}",
+    "FASTMCP_LOG_LEVEL": "ERROR"
+  },
+  "headersTemplate": {},
+  "enabled": true
+}

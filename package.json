@@ -1,0 +1,27 @@
+{
+  "name": "vaultmcp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Remote multi-user MCP credential gateway",
+  "license": "AGPL-3.0-only",
+  "author": "Axiler Labs",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:api": "pnpm --filter @vaultmcp/api dev",
+    "dev:web": "pnpm --filter @vaultmcp/web dev",
+    "dev:cli": "pnpm --filter @vaultmcp-axiler/cli dev",
+    "build": "pnpm -r run build",
+    "vaultmcp": "pnpm --filter @vaultmcp-axiler/cli exec node ./dist/index.js",
+    "db:generate": "pnpm --filter @vaultmcp/api db:generate",
+    "db:migrate": "pnpm --filter @vaultmcp/api db:migrate",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "devDependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
