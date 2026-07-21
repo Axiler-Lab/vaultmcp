@@ -589,16 +589,23 @@ export function App() {
   const [mfaRequired, setMfaRequired] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     api
       .me()
       .then((r) => {
+        if (cancelled) return;
         setUser(r.user);
         setMfaRequired(Boolean(r.mfaRequired));
       })
       .catch(() => {
+        // API down / timeout → still show the public landing.
+        if (cancelled) return;
         setUser(null);
         setMfaRequired(false);
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function logout() {
