@@ -3240,12 +3240,15 @@ button.linkish:hover {
 }
 
 .loading-screen {
+  position: relative;
+  z-index: 2;
   min-height: 100vh;
   display: grid;
   place-items: center;
-  color: var(--text-muted);
+  color: var(--text);
   font-family: var(--mono);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
 }
 
 .copy-btn {

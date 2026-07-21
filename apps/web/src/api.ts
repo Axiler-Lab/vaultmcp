@@ -41,9 +41,32 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Abort a request if the gateway is slow/unreachable so the landing can still render. */
+function withTimeout(ms: number, signal?: AbortSignal): AbortSignal {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  const onAbort = () => {
+    clearTimeout(timer);
+    ctrl.abort();
+  };
+  signal?.addEventListener("abort", onAbort, { once: true });
+  ctrl.signal.addEventListener(
+    "abort",
+    () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+    },
+    { once: true },
+  );
+  return ctrl.signal;
+}
+
 export const api = {
-  me: () =>
-    request<{ user: User; mfaRequired: boolean; mfaSatisfied: boolean }>("/auth/me"),
+  me: (init?: RequestInit) =>
+    request<{ user: User; mfaRequired: boolean; mfaSatisfied: boolean }>("/auth/me", {
+      ...init,
+      signal: withTimeout(4000, init?.signal),
+    }),
   logout: () => request<{ ok: boolean }>("/auth/logout", { method: "POST" }),
   mfaStatus: () => request<{ enabled: boolean; mfaSatisfied: boolean }>("/auth/mfa"),
   mfaSetup: () =>
