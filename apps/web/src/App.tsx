@@ -585,7 +585,7 @@ function WorkspaceRoute({
 }
 
 export function App() {
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [user, setUser] = useState<User | null>(null);
   const [mfaRequired, setMfaRequired] = useState(false);
 
   useEffect(() => {
@@ -598,7 +598,6 @@ export function App() {
         setMfaRequired(Boolean(r.mfaRequired));
       })
       .catch(() => {
-        // API down / timeout → still show the public landing.
         if (cancelled) return;
         setUser(null);
         setMfaRequired(false);
@@ -612,15 +611,6 @@ export function App() {
     await api.logout().catch(() => undefined);
     setUser(null);
     setMfaRequired(false);
-  }
-
-  if (user === undefined) {
-    return (
-      <div className="app-root">
-        <Aurora />
-        <div className="loading-screen">Loading VaultMCP…</div>
-      </div>
-    );
   }
 
   if (user && mfaRequired) {
