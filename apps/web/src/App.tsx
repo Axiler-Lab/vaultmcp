@@ -14,7 +14,7 @@ import {
 import { api, loginUrl, type User } from "./api";
 import { Dock } from "./Dock";
 import { DocsPage } from "./DocsPage";
-import { AppShell, Aurora, SiteNav } from "./Layout";
+import { AppShell, Aurora, GITHUB_REPO_URL, SiteNav } from "./Layout";
 import { McpTokensPanel } from "./McpTokensPanel";
 import { MfaGate, MfaSettingsPanel } from "./MfaPanel";
 import { ProductPage } from "./ProductPage";
@@ -108,6 +108,15 @@ function LoginPage() {
               <a className="btn btn-primary btn-lg" href={loginUrl()}>
                 <GitHubMark className="btn-icon" />
                 Get started
+              </a>
+              <a
+                className="btn btn-ghost btn-lg"
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <GitHubMark className="btn-icon" />
+                Open source
               </a>
               <Link className="link-quiet" to="/product">
                 See how a secret travels <ArrowRightIcon className="btn-icon" aria-hidden />
