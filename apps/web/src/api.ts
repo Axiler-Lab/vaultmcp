@@ -42,7 +42,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /** Abort a request if the gateway is slow/unreachable so the landing can still render. */
-function withTimeout(ms: number, signal?: AbortSignal): AbortSignal {
+function withTimeout(ms: number, signal?: AbortSignal | null): AbortSignal {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
   const onAbort = () => {

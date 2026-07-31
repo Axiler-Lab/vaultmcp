@@ -29,3 +29,6 @@ id_ed25519.*
 *_deploy_key*
 *_deploy_key*.pub
 .vercel
+
+# Git worktrees (local isolation)
+.worktrees/

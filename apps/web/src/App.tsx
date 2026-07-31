@@ -14,7 +14,7 @@ import {
 import { api, loginUrl, type User } from "./api";
 import { Dock } from "./Dock";
 import { DocsPage } from "./DocsPage";
-import { AppShell, Aurora, SiteNav } from "./Layout";
+import { AppShell, Aurora, GITHUB_REPO_URL, SiteNav } from "./Layout";
 import { McpTokensPanel } from "./McpTokensPanel";
 import { MfaGate, MfaSettingsPanel } from "./MfaPanel";
 import { ProductPage } from "./ProductPage";
@@ -108,6 +108,15 @@ function LoginPage() {
               <a className="btn btn-primary btn-lg" href={loginUrl()}>
                 <GitHubMark className="btn-icon" />
                 Get started
+              </a>
+              <a
+                className="btn btn-ghost btn-lg"
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <GitHubMark className="btn-icon" />
+                Open source
               </a>
               <Link className="link-quiet" to="/product">
                 See how a secret travels <ArrowRightIcon className="btn-icon" aria-hidden />
@@ -585,7 +594,7 @@ function WorkspaceRoute({
 }
 
 export function App() {
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [user, setUser] = useState<User | null>(null);
   const [mfaRequired, setMfaRequired] = useState(false);
 
   useEffect(() => {
@@ -598,7 +607,6 @@ export function App() {
         setMfaRequired(Boolean(r.mfaRequired));
       })
       .catch(() => {
-        // API down / timeout → still show the public landing.
         if (cancelled) return;
         setUser(null);
         setMfaRequired(false);
@@ -612,15 +620,6 @@ export function App() {
     await api.logout().catch(() => undefined);
     setUser(null);
     setMfaRequired(false);
-  }
-
-  if (user === undefined) {
-    return (
-      <div className="app-root">
-        <Aurora />
-        <div className="loading-screen">Loading VaultMCP…</div>
-      </div>
-    );
   }
 
   if (user && mfaRequired) {
