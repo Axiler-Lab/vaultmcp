@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { loginUrl, type User } from "./api";
 
+export const GITHUB_REPO_URL = "https://github.com/Axiler-Lab/vaultmcp";
+
 export function Aurora() {
   return <div className="aurora" aria-hidden />;
 }
@@ -54,6 +56,14 @@ export function SiteNav({
               <Link className="nav-link" to="/docs">
                 Docs
               </Link>
+              <a
+                className="nav-link"
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+              </a>
             </>
           ) : (
             <>
@@ -66,6 +76,14 @@ export function SiteNav({
               <Link className="nav-link" to="/docs#clients">
                 Clients
               </Link>
+              <a
+                className="nav-link"
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+              </a>
             </>
           )}
         </nav>
