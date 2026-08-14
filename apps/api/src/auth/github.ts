@@ -1,7 +1,7 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import { env } from "../config.js";
-import { redis } from "../redis.js";
 import {
   beginTotpSetup,
   checkTotpForUser,
@@ -20,14 +20,43 @@ import {
   setSessionCookie,
   upsertGithubUser,
 } from "./session.js";
-import { randomToken } from "../util/crypto.js";
 
 export const authRouter = Router();
 
+function signOauthState(returnTo: string): string {
+  const payload = Buffer.from(
+    JSON.stringify({ r: returnTo, e: Date.now() + 10 * 60 * 1000 }),
+  ).toString("base64url");
+  const sig = createHmac("sha256", env.VAULT_MASTER_KEY).update(payload).digest("base64url");
+  return `${payload}.${sig}`;
+}
+
+function readOauthState(state: string): string | null {
+  const i = state.lastIndexOf(".");
+  if (i <= 0) return null;
+  const payload = state.slice(0, i);
+  const sig = state.slice(i + 1);
+  const expected = createHmac("sha256", env.VAULT_MASTER_KEY).update(payload).digest("base64url");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+      r?: string;
+      e?: number;
+    };
+    if (typeof data.r !== "string" || typeof data.e !== "number" || data.e < Date.now()) {
+      return null;
+    }
+    return data.r;
+  } catch {
+    return null;
+  }
+}
+
 authRouter.get("/github", async (req, res) => {
-  const state = randomToken(16);
   const returnTo = typeof req.query.returnTo === "string" ? req.query.returnTo : "/";
-  await redis.setex(`oauth:gh:state:${state}`, 600, returnTo);
+  const state = signOauthState(returnTo);
   const params = new URLSearchParams({
     client_id: env.GITHUB_CLIENT_ID,
     redirect_uri: `${env.PUBLIC_URL}/auth/github/callback`,
@@ -44,9 +73,7 @@ authRouter.get("/github/callback", async (req, res) => {
     res.status(400).send("Missing code or state");
     return;
   }
-  const returnToKey = `oauth:gh:state:${state}`;
-  const returnTo = await redis.get(returnToKey);
-  if (returnTo) await redis.del(returnToKey);
+  const returnTo = readOauthState(state);
   if (!returnTo) {
     res.status(400).send("Invalid or expired state");
     return;
