@@ -16,7 +16,6 @@
     { "source": "/mcp/:path*", "destination": "/api/mcp/:path*" },
     { "source": "/auth/:path*", "destination": "/api/auth/:path*" },
     { "source": "/oauth/:path*", "destination": "/api/oauth/:path*" },
-    { "source": "/.well-known/:path*", "destination": "/api/well-known/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/.well-known/:path*", "destination": "/api/well-known/:path*" }
   ]
 }
