@@ -5,15 +5,17 @@
   "buildCommand": "pnpm --filter @vaultmcp/shared build && pnpm --filter @vaultmcp/api build && pnpm --filter @vaultmcp/web build",
   "outputDirectory": "apps/web/dist",
   "rewrites": [
-    { "source": "/health", "destination": "/api/health" },
-    { "source": "/mcp", "destination": "/api/mcp" },
-    { "source": "/mcp/:path*", "destination": "/api/mcp/:path*" },
-    { "source": "/auth/:path*", "destination": "/api/auth/:path*" },
-    { "source": "/oauth/:path*", "destination": "/api/oauth/:path*" },
-    { "source": "/.well-known/:path*", "destination": "/api/well-known/:path*" },
+    { "source": "/health", "destination": "/api?url=/health" },
+    { "source": "/mcp", "destination": "/api?url=/mcp" },
+    { "source": "/mcp/:path(.*)", "destination": "/api?url=/mcp/:path" },
+    { "source": "/auth/github/callback", "destination": "/api/auth/github/callback" },
+    { "source": "/auth/:path(.*)", "destination": "/api?url=/auth/:path" },
+    { "source": "/oauth/:path(.*)", "destination": "/api?url=/oauth/:path" },
+    { "source": "/.well-known/:path(.*)", "destination": "/api?url=/.well-known/:path" },
+    { "source": "/api/:path(.*)", "destination": "/api?url=/api/:path" },
     { "source": "/product", "destination": "/index.html" },
     { "source": "/docs", "destination": "/index.html" },
-    { "source": "/docs/:path*", "destination": "/index.html" },
-    { "source": "/workspaces/:path*", "destination": "/index.html" }
+    { "source": "/docs/:path(.*)", "destination": "/index.html" },
+    { "source": "/workspaces/:path(.*)", "destination": "/index.html" }
   ]
 }
