@@ -13,7 +13,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z
     .string()
     .default("postgres://vaultmcp:vaultmcp@localhost:5432/vaultmcp"),
-  REDIS_URL: z.string().default("redis://localhost:6379"),
+  REDIS_URL: z.string().optional(),
   VAULT_MASTER_KEY: z.string().min(16),
   GITHUB_CLIENT_ID: z.string().min(1),
   GITHUB_CLIENT_SECRET: z.string().min(1),
@@ -33,8 +33,12 @@ function loadEnv() {
     throw new Error("Invalid environment configuration");
   }
   const data = parsed.data;
+  const redisUrl =
+    data.REDIS_URL?.trim() ||
+    (process.env.VERCEL ? undefined : "redis://localhost:6379");
   return {
     ...data,
+    REDIS_URL: redisUrl,
     COOKIE_SECURE: data.COOKIE_SECURE ?? data.NODE_ENV === "production",
     masterKey: deriveMasterKey(data.VAULT_MASTER_KEY),
   };

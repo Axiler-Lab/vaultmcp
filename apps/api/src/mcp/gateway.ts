@@ -24,7 +24,7 @@ import { randomUUID } from "node:crypto";
 import type { Request, Response } from "express";
 import type { AuthUser } from "../auth/session.js";
 import { setDefaultWorkspace } from "../auth/session.js";
-import { redis } from "../redis.js";
+import { kvGet, kvSetEx } from "../redis.js";
 import { connectUpstream } from "./upstream-client.js";
 import * as secrets from "../services/secrets.js";
 import {
@@ -54,14 +54,14 @@ type SessionState = {
 
 async function getSessionState(user: AuthUser): Promise<SessionState> {
   const key = `mcp:ws:${user.id}`;
-  const cached = await redis.get(key);
+  const cached = await kvGet(key);
   if (cached) {
     return { userId: user.id, workspaceId: cached };
   }
   if (user.defaultWorkspaceId) {
     const m = await getMembership(user.defaultWorkspaceId, user.id);
     if (m) {
-      await redis.setex(key, 86400, user.defaultWorkspaceId);
+      await kvSetEx(key, 86400, user.defaultWorkspaceId);
       return { userId: user.id, workspaceId: user.defaultWorkspaceId };
     }
   }
@@ -69,7 +69,7 @@ async function getSessionState(user: AuthUser): Promise<SessionState> {
 }
 
 async function setSessionWorkspace(userId: string, workspaceId: string) {
-  await redis.setex(`mcp:ws:${userId}`, 86400, workspaceId);
+  await kvSetEx(`mcp:ws:${userId}`, 86400, workspaceId);
   await setDefaultWorkspace(userId, workspaceId);
 }
 
