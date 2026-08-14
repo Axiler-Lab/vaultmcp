@@ -5,15 +5,11 @@ import { connectRedis } from "../apps/api/dist/redis.js";
 const app = createApp();
 let redisReady: Promise<void> | null = null;
 
-function ensureRedis(): Promise<void> {
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
   redisReady ??= connectRedis().catch((err) => {
     console.error("Redis unavailable:", err);
   });
-  return redisReady;
-}
-
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
-  await ensureRedis();
+  await redisReady;
   return app(req, res);
 }
 
