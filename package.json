@@ -5,6 +5,7 @@
   "description": "Remote multi-user MCP credential gateway",
   "license": "AGPL-3.0-only",
   "author": "Axiler Labs",
+  "type": "module",
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
     "dev:api": "pnpm --filter @vaultmcp/api dev",
