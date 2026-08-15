@@ -22,7 +22,9 @@
     "dev": "tsc -p tsconfig.json --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo ok",
-    "test:crypto": "node crypto.spec.mjs"
+    "test:crypto": "node crypto.spec.mjs",
+    "test:security": "node security.spec.mjs",
+    "test": "node crypto.spec.mjs && node security.spec.mjs"
   },
   "dependencies": {
     "zod": "^3.24.2"

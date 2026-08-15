@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsCtlChars } from "./security.js";
 
 export const WorkspaceRole = z.enum(["owner", "admin", "member", "viewer"]);
 export type WorkspaceRole = z.infer<typeof WorkspaceRole>;
@@ -49,6 +50,9 @@ export function resolveSecretPlaceholders(
     const value = secrets[name];
     if (value === undefined) {
       throw new Error(`Missing secret: ${name}`);
+    }
+    if (containsCtlChars(value) || containsCtlChars(name)) {
+      throw new Error(`Secret ${name} contains control characters`);
     }
     return value;
   });
@@ -191,3 +195,4 @@ export const API_TOKEN_PREFIX = "vmcp_" as const;
 export const MCP_CLIENT_SERVER_KEY = "vaultmcp" as const;
 
 export * from "./integrationTemplates.js";
+export * from "./security.js";

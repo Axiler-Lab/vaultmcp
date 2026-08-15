@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
+import { safePostLoginDest } from "@vaultmcp/shared";
 import { env } from "../config.js";
 import {
   beginTotpSetup,
@@ -142,7 +143,7 @@ authRouter.get("/github/callback", async (req, res) => {
   });
   setSessionCookie(res, sessionToken);
 
-  const destBase = returnTo.startsWith("http") ? returnTo : `${env.WEB_ORIGIN}${returnTo}`;
+  const destBase = safePostLoginDest(returnTo, env.WEB_ORIGIN, env.PUBLIC_URL);
   const dest =
     user.totpEnabled && !destBase.includes("mfa=1")
       ? `${env.WEB_ORIGIN}/?mfa=1`

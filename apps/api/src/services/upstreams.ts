@@ -1,7 +1,8 @@
-import { findSecretPlaceholders, type UpstreamTransport } from "@vaultmcp/shared";
+import { findSecretPlaceholders, type UpdateUpstreamInput, type UpstreamTransport } from "@vaultmcp/shared";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { auditLogs, upstreamServers } from "../db/schema.js";
+import { assertSafeUpstreamUrl } from "../net/upstream-url.js";
 import { HttpError, requireMembership } from "./workspaces.js";
 
 export type UpstreamMeta = {
@@ -88,11 +89,19 @@ export async function createUpstream(
   },
 ) {
   await requireMembership(workspaceId, userId, "admin");
-  if (input.transport === "stdio" && !input.command) {
-    throw new HttpError(400, "command required for stdio transport");
+  if (input.transport === "stdio") {
+    if (process.env.VERCEL) {
+      throw new HttpError(400, "stdio upstreams are not supported on the hosted runtime");
+    }
+    if (!input.command) {
+      throw new HttpError(400, "command required for stdio transport");
+    }
   }
-  if (input.transport === "http" && !input.url) {
-    throw new HttpError(400, "url required for http transport");
+  if (input.transport === "http") {
+    if (!input.url) {
+      throw new HttpError(400, "url required for http transport");
+    }
+    await assertSafeUpstreamUrl(input.url);
   }
   try {
     const [row] = await db
@@ -123,15 +132,7 @@ export async function updateUpstream(
   workspaceId: string,
   userId: string,
   upstreamId: string,
-  input: Partial<{
-    name: string;
-    command: string | null;
-    args: string[];
-    url: string | null;
-    envTemplate: Record<string, string>;
-    headersTemplate: Record<string, string>;
-    enabled: boolean;
-  }>,
+  input: UpdateUpstreamInput,
 ) {
   await requireMembership(workspaceId, userId, "admin");
   const rows = await db
@@ -140,10 +141,27 @@ export async function updateUpstream(
     .where(and(eq(upstreamServers.id, upstreamId), eq(upstreamServers.workspaceId, workspaceId)))
     .limit(1);
   if (!rows[0]) throw new HttpError(404, "upstream not found");
+  const nextUrl = input.url !== undefined ? input.url : rows[0].url;
+  const nextTransport = rows[0].transport;
+  if (nextTransport === "stdio" && process.env.VERCEL) {
+    throw new HttpError(400, "stdio upstreams are not supported on the hosted runtime");
+  }
+  if (nextTransport === "http" && nextUrl) {
+    await assertSafeUpstreamUrl(nextUrl);
+  }
   const [updated] = await db
     .update(upstreamServers)
-    .set({ ...input, updatedAt: new Date() })
-    .where(eq(upstreamServers.id, upstreamId))
+    .set({
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.command !== undefined ? { command: input.command } : {}),
+      ...(input.args !== undefined ? { args: input.args } : {}),
+      ...(input.url !== undefined ? { url: input.url } : {}),
+      ...(input.envTemplate !== undefined ? { envTemplate: input.envTemplate } : {}),
+      ...(input.headersTemplate !== undefined ? { headersTemplate: input.headersTemplate } : {}),
+      ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(upstreamServers.id, upstreamId), eq(upstreamServers.workspaceId, workspaceId)))
     .returning();
   return toMeta(updated!);
 }

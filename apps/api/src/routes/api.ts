@@ -8,6 +8,7 @@ import {
   MCP_CLIENT_SERVER_KEY,
   UpdateMemberRoleSchema,
   UpdateSecretSchema,
+  UpdateUpstreamSchema,
 } from "@vaultmcp/shared";
 import { ZodError } from "zod";
 import { getUserById, requireWebAuth, setDefaultWorkspace } from "../auth/session.js";
@@ -78,7 +79,7 @@ apiRouter.get("/workspaces/:id", async (req, res) => {
       return;
     }
     const membership = await workspaces.getMembership(req.params.id, req.user!.id);
-    res.json({ workspace: ws, role: membership?.role });
+    res.json({ workspace: workspaces.toPublicWorkspace(ws), role: membership?.role });
   } catch (err) {
     handleError(res, err);
   }
@@ -230,11 +231,12 @@ apiRouter.post("/workspaces/:id/upstreams", async (req, res) => {
 
 apiRouter.patch("/workspaces/:id/upstreams/:upstreamId", async (req, res) => {
   try {
+    const body = UpdateUpstreamSchema.parse(req.body);
     const upstream = await upstreams.updateUpstream(
       req.params.id,
       req.user!.id,
       req.params.upstreamId,
-      req.body,
+      body,
     );
     res.json({ upstream });
   } catch (err) {

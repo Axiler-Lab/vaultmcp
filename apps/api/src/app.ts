@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { ZodError } from "zod";
+import { isAllowedCsrfOrigin } from "@vaultmcp/shared";
 import { authRouter } from "./auth/github.js";
 import { mcpOauthRouter, requireMcpBearer } from "./auth/mcp-oauth.js";
 import { env } from "./config.js";
@@ -105,6 +106,27 @@ export function createApp(): express.Express {
   app.use(express.json({ limit: "2mb" }));
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());
+
+  app.use((req, res, next) => {
+    if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+      next();
+      return;
+    }
+    if (isMcpPublicSurface(req.path) || isRuntimeSurface(req.path)) {
+      next();
+      return;
+    }
+    const token = req.cookies?.[env.SESSION_COOKIE_NAME] as string | undefined;
+    if (!token) {
+      next();
+      return;
+    }
+    if (!isAllowedCsrfOrigin(req.get("origin") ?? undefined, env.WEB_ORIGIN)) {
+      res.status(403).json({ error: "csrf" });
+      return;
+    }
+    next();
+  });
 
   app.use(
     rateLimit({

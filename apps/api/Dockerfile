@@ -23,11 +23,12 @@ ENV NODE_ENV=production
 # uv/uvx for stdio upstreams such as awslabs.aws-api-mcp-server
 RUN apt-get update \
   && apt-get install -y --no-install-recommends curl ca-certificates \
-  && curl -LsSf https://astral.sh/uv/install.sh | sh \
+  && curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
-ENV PATH="/root/.local/bin:${PATH}"
+ENV PATH="/usr/local/bin:${PATH}"
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
-COPY --from=build /app /app
+COPY --from=build --chown=node:node /app /app
 WORKDIR /app/apps/api
+USER node
 EXPOSE 3001
 CMD ["sh", "-c", "pnpm db:migrate && node dist/index.js"]
