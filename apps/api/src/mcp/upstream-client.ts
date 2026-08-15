@@ -43,10 +43,11 @@ export async function connectUpstream(
     const transport = new StdioClientTransport({
       command: meta.command,
       args: meta.args,
-      env: {
-        ...process.env,
-        ...envVars,
-      } as Record<string, string>,
+      // Only pass resolved template vars. The SDK merges a sanitized default
+      // environment (PATH/HOME/TERM/…) underneath; inheriting the gateway's
+      // full process env here would leak service credentials (master key,
+      // database URL) to every spawned upstream.
+      env: envVars,
     });
     await client.connect(transport);
     return {
