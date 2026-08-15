@@ -23,7 +23,7 @@ import {
 import { randomUUID } from "node:crypto";
 import type { Request, Response } from "express";
 import type { AuthUser } from "../auth/session.js";
-import { setDefaultWorkspace } from "../auth/session.js";
+import { getUserById, setDefaultWorkspace } from "../auth/session.js";
 import { kvGet, kvSetEx } from "../redis.js";
 import { connectUpstream } from "./upstream-client.js";
 import * as secrets from "../services/secrets.js";
@@ -59,11 +59,17 @@ async function getSessionState(user: AuthUser): Promise<SessionState> {
   if (cached) {
     return { userId: user.id, workspaceId: cached };
   }
-  if (user.defaultWorkspaceId) {
-    const m = await getMembership(user.defaultWorkspaceId, user.id);
+  // Re-read the user instead of trusting the AuthUser captured at session
+  // creation: its defaultWorkspaceId is frozen at initialize time, so a
+  // use_workspace switch would not take effect on this session whenever the
+  // cache layer is unavailable.
+  const current = await getUserById(user.id);
+  const defaultWorkspaceId = current?.defaultWorkspaceId ?? null;
+  if (defaultWorkspaceId) {
+    const m = await getMembership(defaultWorkspaceId, user.id);
     if (m) {
-      await kvSetEx(key, 86400, user.defaultWorkspaceId);
-      return { userId: user.id, workspaceId: user.defaultWorkspaceId };
+      await kvSetEx(key, 86400, defaultWorkspaceId);
+      return { userId: user.id, workspaceId: defaultWorkspaceId };
     }
   }
   return { userId: user.id, workspaceId: null };
