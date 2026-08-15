@@ -5,6 +5,26 @@ import { db } from "../db/client.js";
 import { users, workspaceMembers, workspaces } from "../db/schema.js";
 import { mintWorkspaceDek } from "./workspace-keys.js";
 
+export type PublicWorkspace = {
+  id: string;
+  name: string;
+  slug: string;
+  createdByUserId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export function toPublicWorkspace(row: typeof workspaces.$inferSelect): PublicWorkspace {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    createdByUserId: row.createdByUserId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 export class HttpError extends Error {
   constructor(
     public status: number,
@@ -70,7 +90,7 @@ export async function createWorkspace(userId: string, name: string, slug: string
     userId,
     role: "owner",
   });
-  return updated!;
+  return toPublicWorkspace(updated!);
 }
 
 export async function getWorkspaceById(id: string) {

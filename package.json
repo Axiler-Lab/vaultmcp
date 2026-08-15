@@ -16,7 +16,8 @@
     "db:generate": "pnpm --filter @vaultmcp/api db:generate",
     "db:migrate": "pnpm --filter @vaultmcp/api db:migrate",
     "lint": "pnpm -r run lint",
-    "typecheck": "pnpm -r run typecheck"
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm --filter @vaultmcp/shared test"
   },
   "engines": {
     "node": ">=22"

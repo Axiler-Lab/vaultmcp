@@ -12,7 +12,8 @@ import {
 import { env } from "../config.js";
 import { getUserById, optionalWebAuth, requireWebAuth } from "./session.js";
 import { authenticateApiToken, isApiToken } from "../services/tokens.js";
-import { randomToken, sha256 } from "../util/crypto.js";
+import { filterOAuthRedirectUris, isAllowedOAuthRedirect } from "@vaultmcp/shared";
+import { randomToken, sha256, safeEqualStr } from "../util/crypto.js";
 
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
 const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -22,22 +23,8 @@ function pkceChallenge(verifier: string): string {
   return createHash("sha256").update(verifier).digest("base64url");
 }
 
-function isAllowedRedirect(uri: string, registered: string[]): boolean {
-  if (registered.includes(uri)) return true;
-  // Cursor loopback redirects
-  try {
-    const u = new URL(uri);
-    if (
-      (u.hostname === "localhost" || u.hostname === "127.0.0.1") &&
-      (u.pathname === "/callback" || u.pathname.endsWith("/callback"))
-    ) {
-      return true;
-    }
-    if (uri.startsWith("cursor://")) return true;
-  } catch {
-    return false;
-  }
-  return false;
+function isAllowedRedirect(uri: string): boolean {
+  return isAllowedOAuthRedirect(uri);
 }
 
 export const mcpOauthRouter: Router = createRouter();
@@ -83,9 +70,15 @@ mcpOauthRouter.post("/oauth/register", async (req, res) => {
     grant_types?: string[];
     token_endpoint_auth_method?: string;
   };
-  const redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
-  if (redirectUris.length === 0) {
-    res.status(400).json({ error: "invalid_client_metadata", error_description: "redirect_uris required" });
+  const rawUris = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
+  let redirectUris: string[];
+  try {
+    redirectUris = filterOAuthRedirectUris(rawUris);
+  } catch (err) {
+    res.status(400).json({
+      error: "invalid_client_metadata",
+      error_description: err instanceof Error ? err.message : "redirect_uris required",
+    });
     return;
   }
   const clientId = `vmcp_${randomToken(16)}`;
@@ -128,28 +121,22 @@ mcpOauthRouter.get("/oauth/authorize", optionalWebAuth, async (req, res) => {
     return;
   }
 
-  const clients = await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)).limit(1);
-  let client = clients[0];
-  if (!client) {
-    // Auto-register known Cursor-style clients for smoother DX
+  const existing = await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)).limit(1);
+  if (!isAllowedRedirect(redirectUri)) {
+    res.status(400).send("invalid redirect_uri");
+    return;
+  }
+  if (!existing[0]) {
+    // Auto-register loopback / native clients only (Cursor, VS Code, etc.)
     await db.insert(oauthClients).values({
       clientId,
-      clientName: "Cursor MCP",
+      clientName: "MCP Client",
       redirectUris: [redirectUri],
       tokenEndpointAuthMethod: "none",
     });
-    client = (await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)).limit(1))[0]!;
-  }
-
-  if (!isAllowedRedirect(redirectUri, client.redirectUris)) {
-    // Persist newly seen loopback redirect
-    if (isAllowedRedirect(redirectUri, [])) {
-      const updated = [...new Set([...client.redirectUris, redirectUri])];
-      await db.update(oauthClients).set({ redirectUris: updated }).where(eq(oauthClients.clientId, clientId));
-    } else {
-      res.status(400).send("invalid redirect_uri");
-      return;
-    }
+  } else if (!existing[0].redirectUris.includes(redirectUri)) {
+    const updated = [...new Set([...existing[0].redirectUris, redirectUri])];
+    await db.update(oauthClients).set({ redirectUris: updated }).where(eq(oauthClients.clientId, clientId));
   }
 
   if (!req.user || (req.user.totpEnabled && !req.mfaSatisfied)) {
@@ -191,27 +178,24 @@ mcpOauthRouter.post("/oauth/token", async (req, res) => {
       return;
     }
 
-    const rows = await db
-      .select()
-      .from(oauthAuthCodes)
+    const consumed = await db
+      .delete(oauthAuthCodes)
       .where(
         and(
           eq(oauthAuthCodes.codeHash, sha256(code)),
           gt(oauthAuthCodes.expiresAt, new Date()),
         ),
       )
-      .limit(1);
-    const authCode = rows[0];
+      .returning();
+    const authCode = consumed[0];
     if (!authCode || authCode.clientId !== clientId || authCode.redirectUri !== redirectUri) {
       res.status(400).json({ error: "invalid_grant" });
       return;
     }
-    if (pkceChallenge(codeVerifier) !== authCode.codeChallenge) {
+    if (!safeEqualStr(pkceChallenge(codeVerifier), authCode.codeChallenge)) {
       res.status(400).json({ error: "invalid_grant", error_description: "pkce verification failed" });
       return;
     }
-
-    await db.delete(oauthAuthCodes).where(eq(oauthAuthCodes.id, authCode.id));
 
     const accessToken = randomToken(32);
     const refreshToken = randomToken(32);
@@ -265,6 +249,11 @@ mcpOauthRouter.post("/oauth/token", async (req, res) => {
     }
 
     const accessToken = randomToken(32);
+    const nextRefresh = randomToken(32);
+    await db
+      .update(oauthRefreshTokens)
+      .set({ revoked: true })
+      .where(eq(oauthRefreshTokens.id, rt.id));
     await db.insert(oauthAccessTokens).values({
       tokenHash: sha256(accessToken),
       clientId,
@@ -272,11 +261,19 @@ mcpOauthRouter.post("/oauth/token", async (req, res) => {
       scope: rt.scope,
       expiresAt: new Date(Date.now() + ACCESS_TOKEN_TTL_MS),
     });
+    await db.insert(oauthRefreshTokens).values({
+      tokenHash: sha256(nextRefresh),
+      clientId,
+      userId: rt.userId,
+      scope: rt.scope,
+      expiresAt: rt.expiresAt,
+    });
 
     res.json({
       access_token: accessToken,
       token_type: "Bearer",
       expires_in: Math.floor(ACCESS_TOKEN_TTL_MS / 1000),
+      refresh_token: nextRefresh,
       scope: rt.scope ?? "mcp",
     });
     return;

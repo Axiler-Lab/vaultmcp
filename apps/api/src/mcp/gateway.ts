@@ -39,6 +39,7 @@ import {
   getMembership,
   getWorkspaceById,
   listWorkspacesForUser,
+  toPublicWorkspace,
 } from "../services/workspaces.js";
 
 type GatewayAuth = {
@@ -334,7 +335,7 @@ function createMcpServer(auth: GatewayAuth): Server {
           return textResult("No workspace selected. Use use_workspace.");
         }
         const ws = await getWorkspaceById(state.workspaceId);
-        return textResult(ws);
+        return textResult(ws ? toPublicWorkspace(ws) : null);
       }
 
       if (name === "use_workspace") {
